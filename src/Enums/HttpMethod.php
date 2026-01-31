@@ -23,4 +23,13 @@ enum HttpMethod: string
 
         return $label === $key ? $this->value : $label;
     }
+
+    public static function fromString(string $method): self
+    {
+        $method = strtoupper(trim($method));
+
+        return self::tryFrom($method)
+            ?? throw new \InvalidArgumentException("Invalid HTTP method: {$method}");
+    }
+
 }

@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Omarsaiouf\Integrations\Enums\MappingMode;
+use Omarsaiouf\Integrations\Enums\AuthType;
 
 return new class extends Migration {
     /**
@@ -11,11 +11,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('di_mappings', function (Blueprint $table) {
+        Schema::create('di_providers', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('endpoint_id')->constrained('di_endpoints')->cascadeOnDelete();
-            $table->enum('type', MappingMode::getAllValue());
-            $table->json('rules');
+            $table->string('key')->unique();
+            $table->string('url');
+            $table->enum('auth_type', AuthType::getAllValue())->default(AuthType::NONE->value);
+            $table->json('auth_meta')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('di_mappings');
+        Schema::dropIfExists('di_providers');
     }
 };
