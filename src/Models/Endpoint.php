@@ -29,4 +29,9 @@ class Endpoint extends Model
         return $this->belongsTo(Provider::class);
     }
 
+    public function mapping()
+    {
+        return $this->hasOne(Mapping::class);
+    }
+
 }

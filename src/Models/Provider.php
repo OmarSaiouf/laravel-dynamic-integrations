@@ -22,6 +22,9 @@ class Provider extends Model
         'auth_meta' => 'array',
     ];
 
-    // public 
+    public function endpoints()
+    {
+        return $this->hasMany(Endpoint::class);
+    }
 
 }

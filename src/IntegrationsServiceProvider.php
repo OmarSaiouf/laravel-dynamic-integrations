@@ -3,22 +3,35 @@
 namespace Omarsaiouf\Integrations;
 
 use Illuminate\Support\ServiceProvider;
+use Omarsaiouf\Integrations\Contracts\Http\HttpClient;
+use Omarsaiouf\Integrations\Contracts\Logging\RunLogger;
+use Omarsaiouf\Integrations\Contracts\Mapping\ResponseMapper;
 use Omarsaiouf\Integrations\Contracts\Request\RequestBuilderFactory;
 use Omarsaiouf\Integrations\Integration\IntegrationManager;
 use Omarsaiouf\Integrations\Request\RequestBuilder;
+use Omarsaiouf\Integrations\Http\HttpClientFactory;
+use Omarsaiouf\Integrations\Logging\EloquentRunLogger;
+use Omarsaiouf\Integrations\Mapping\ResponseMapperFactory;
 
 class IntegrationsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(RequestBuilderFactory::class, RequestBuilder::class);
-
-        $this->app->bind('integration.manager', IntegrationManager::class);
-        
         $this->mergeConfigFrom(
             __DIR__ . '/../config/integrations.php',
             'integrations-config'
         );
+        $this->app->singleton(RequestBuilderFactory::class, RequestBuilder::class);
+
+        $this->app->singleton("integration.manager", IntegrationManager::class);
+
+        $this->app->singleton(HttpClient::class, function () {
+            return (new HttpClientFactory())->make(config('integrations.http.provider', 'Http'));
+        });
+        $this->app->singleton(ResponseMapper::class, function () {
+            return (new ResponseMapperFactory())->make(config('integrations.mapper.name', 'default'));
+        });
+        $this->app->singleton(RunLogger::class, EloquentRunLogger::class);
     }
 
     public function boot(): void

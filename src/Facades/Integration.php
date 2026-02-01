@@ -1,6 +1,6 @@
 <?php
 
-namespace Omarsiouf\Integrations\Facades;
+namespace Omarsaiouf\Integrations\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

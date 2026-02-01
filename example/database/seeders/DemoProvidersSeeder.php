@@ -48,10 +48,15 @@ class DemoProvidersSeeder extends Seeder
                 'type' => MappingMode::LIST ,
                 'endpoint_id' => $endpoint->id,
                 'rules' => [
-                    'user_id' => 'userId',
-                    'id' => 'id',
-                    'name' => 'title',
-                    'content' => 'body'
+                    "data" => [
+                        "@each" => '.',
+                        "map" => [
+                            'user_id' => 'userId',
+                            'id' => 'id',
+                            'name' => 'title',
+                            'content' => 'body'
+                        ]
+                    ]
 
                 ],
             ]
