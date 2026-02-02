@@ -7,9 +7,9 @@ use Omarsaiouf\Integrations\Models\Provider;
 
 class BearerTokenAuth implements AuthApplier
 {
-    public function apply(Provider $provider, array &$headers, array &$query): void
+    public function apply(array $provider, array &$headers, array &$query): void
     {
-        $token = $provider->auth_token ?? ($provider->auth_meta['token'] ?? null);
+        $token = $provider['auth_token'] ?? ($provider['auth_meta']['token'] ?? null);
 
         if (empty($token)) {
             throw new \InvalidArgumentException("Bearer token is required");

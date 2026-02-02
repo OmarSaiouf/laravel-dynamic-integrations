@@ -7,7 +7,7 @@ use Omarsaiouf\Integrations\Models\Provider;
 
 class NoAuth implements AuthApplier
 {
-    public function apply(Provider $provider, array &$headers, array &$query): void
+    public function apply(array $provider, array &$headers, array &$query): void
     {
         // nothing
     }

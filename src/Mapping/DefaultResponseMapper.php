@@ -11,16 +11,29 @@ use Omarsaiouf\Integrations\Exceptions\MappingException;
 class DefaultResponseMapper implements ResponseMapper
 {
     /**
-     * $rules = output shape (dynamic)
+     * Mapping rules overview
+     * - String value: treated as a dot path in the response (e.g. 'user.id').
+     * - Scalar value: returned as-is.
+     * - Array/object: resolved recursively.
+     * - @each + map: iterate over a list and map each item.
+     *
+     * Example rules:
+     * [
+     *   '@each' => 'data.items',
+     *   'map' => [
+     *     'id' => 'id',
+     *     'title' => 'title',
+     *     'author' => [
+     *       'name' => 'user.name',
+     *     ],
+     *   ],
+     * ]
      */
-    public function map(array $rules, MappingMode $mode, HttpResponse $response): MappedResult
+    public function map(array $rules, HttpResponse $response): MappedResult
     {
         $payload = $response->json();
 
         $data = $this->resolveNode($rules, $payload);
-
-        // مبدئيًا نخلي extra فاضي.
-        // إذا بدك extra منفصل، خلي rules يحتوي "extra" و"data" (اختياري)
         return new MappedResult(
             data: is_array($data) ? $data : ['value' => $data],
             extra: []
@@ -82,7 +95,7 @@ class DefaultResponseMapper implements ResponseMapper
                 continue;
             }
 
-            // دعم indexes: "items.0.id"
+            // supports numeric indexes: "items.0.id"
             if (is_array($data) && ctype_digit($seg)) {
                 $idx = (int) $seg;
                 $data = $data[$idx] ?? null;

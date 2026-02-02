@@ -17,19 +17,18 @@ class IntegrationsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(
-            __DIR__ . '/../config/integrations.php',
-            'integrations-config'
-        );
+        $this->mergeConfigFrom(__DIR__ . '/../config/integrations/base.php', 'integrations.base');
+        $this->mergeConfigFrom(__DIR__ . '/../config/integrations/rules.php', 'integrations.rules');
+
         $this->app->singleton(RequestBuilderFactory::class, RequestBuilder::class);
 
         $this->app->singleton("integration.manager", IntegrationManager::class);
 
         $this->app->singleton(HttpClient::class, function () {
-            return (new HttpClientFactory())->make(config('integrations.http.provider', 'Http'));
+            return (new HttpClientFactory())->make(config('integrations.base.http.provider', 'Http'));
         });
         $this->app->singleton(ResponseMapper::class, function () {
-            return (new ResponseMapperFactory())->make(config('integrations.mapper.name', 'default'));
+            return (new ResponseMapperFactory())->make(config('integrations.base.mapper.name', 'default'));
         });
         $this->app->singleton(RunLogger::class, EloquentRunLogger::class);
     }
@@ -37,9 +36,10 @@ class IntegrationsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->publishes([
-            __DIR__ . '/../config/integrations.php' => config_path('integrations.php'),
-        ], 'integrations-publishes');
-
+            __DIR__ . '/../config/integrations/base.php' => config_path('integrations/base.php'),
+            __DIR__ . '/../config/integrations/rules.php' => config_path('integrations/rules.php'),
+        ], 'integrations-config');
+        
         $this->publishes(
             [__DIR__ . "/../database/seeders/DemoProvidersSeeder.php" => database_path('seeders/DemoProvidersSeeder.php')],
             'integrations-publishes'

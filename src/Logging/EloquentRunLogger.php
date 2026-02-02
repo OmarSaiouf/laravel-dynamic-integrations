@@ -69,8 +69,8 @@ class EloquentRunLogger implements RunLogger
 
     private function responseSnapshot(HttpResponse $response): array
     {
-        $storeBody = config('integrations.logging.store_response_body', true);
-        $maxLen = (int) config('integrations.logging.max_raw_length', 2000);
+        $storeBody = config('integrations.base.logging.store_response_body', true);
+        $maxLen = (int) config('integrations.base.logging.max_raw_length', 2000);
 
         return [
             'status' => $response->status,

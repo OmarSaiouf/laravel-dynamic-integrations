@@ -8,7 +8,6 @@ use Omarsaiouf\Integrations\Models\Endpoint;
 use Omarsaiouf\Integrations\Models\Mapping;
 use Omarsaiouf\Integrations\Enums\AuthType;
 use Omarsaiouf\Integrations\Enums\HttpMethod;
-use Omarsaiouf\Integrations\Enums\MappingMode;
 
 class DemoProvidersSeeder extends Seeder
 {
@@ -45,7 +44,6 @@ class DemoProvidersSeeder extends Seeder
         Mapping::updateOrCreate(
             ['endpoint_id' => $endpoint->id],
             [
-                'type' => MappingMode::LIST ,
                 'endpoint_id' => $endpoint->id,
                 'rules' => [
                     "data" => [

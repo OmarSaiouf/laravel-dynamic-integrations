@@ -10,14 +10,28 @@ class Mapping extends Model
 {
     use HasUuids;
     protected $table = 'di_mappings';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fillable
+    |--------------------------------------------------------------------------
+    | endpoint_id: the owning endpoint ID
+    | rules: JSON mapping rules used by DefaultResponseMapper
+    |
+    | Example rules:
+    | [
+    |   'id' => 'id',
+    |   'user_id' => 'userId',
+    |   '@each' => '.',
+    |   'map' => ['id' => 'id']
+    | ]
+    */
     protected $fillable = [
         'endpoint_id',
-        'type',
         'rules',
     ];
 
     protected $casts = [
-        'type' => MappingMode::class,
         'rules' => 'array',
     ];
 
