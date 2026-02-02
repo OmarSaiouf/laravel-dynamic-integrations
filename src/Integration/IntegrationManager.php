@@ -50,6 +50,79 @@ class IntegrationManager
         }
     }
 
+    /**
+     * @param array<string, array{provider:string, endpoint:string, inputs:array}> $items
+     * @return array<string, array>
+     */
+    public function pool(array $items): array
+    {
+        $start = microtime(true);
+
+        $requests = [];
+        $meta = [];
+
+        foreach ($items as $name => $item) {
+            if (!is_string($name) || $name === '') {
+                throw new \InvalidArgumentException('Pool items must use a non-empty string key as the name.');
+            }
+
+            $providerKey = $item['provider'] ?? null;
+            $endpointKey = $item['endpoint'] ?? null;
+            $inputs = $item['inputs'] ?? [];
+
+            if (!is_string($providerKey) || !is_string($endpointKey)) {
+                throw new \InvalidArgumentException("Pool item '{$name}' must include provider and endpoint.");
+            }
+
+            $provider = $this->provider($providerKey);
+            $endpoint = $this->endpoint($endpointKey);
+            $requestBuilder = $this->requestBuilder($provider, $endpoint, (array) $inputs);
+
+            $requests[$name] = $requestBuilder;
+            $meta[$name] = [
+                'provider' => $provider,
+                'endpoint' => $endpoint,
+                'request' => $requestBuilder,
+            ];
+        }
+
+        try {
+            $responses = $this->baseHttpClient->pool($requests);
+            $out = [];
+
+            foreach ($responses as $name => $response) {
+                $provider = $meta[$name]['provider'];
+                $endpoint = $meta[$name]['endpoint'];
+                $request = $meta[$name]['request'];
+
+                if (!$response->isSuccess()) {
+                    throw new \RuntimeException("HTTP failed with status {$response->status}");
+                }
+
+                $mappedResult = $this->responseMapper($endpoint['mapping'], $response);
+                $duration = (int) ((microtime(true) - $start) * 1000);
+                $this->runLogger->success($provider, $endpoint, $request, $response, $mappedResult, $duration);
+
+                $out[$name] = $mappedResult->toArray();
+            }
+
+            return $out;
+        } catch (\Throwable $e) {
+            $duration = (int) ((microtime(true) - $start) * 1000);
+            foreach ($meta as $name => $data) {
+                $this->runLogger->failed(
+                    $data['provider'],
+                    $data['endpoint'],
+                    $data['request'],
+                    $responses[$name] ?? null,
+                    $e,
+                    $duration
+                );
+            }
+            throw $e;
+        }
+    }
+
     public function responseMapper(array $mapping, HttpResponse $response)
     {
         return $this->baseResponseMapper->map($mapping['rules'], $response);

@@ -3,6 +3,7 @@
 namespace Omarsaiouf\Integrations\Http;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Omarsaiouf\Integrations\Contracts\Http\HttpClient;
@@ -39,6 +40,74 @@ class LaravelHttpClient implements HttpClient
             $response->body(),
             $response->successful()
         );
+    }
+
+    public function pool(array $requests): array
+    {
+        foreach ($requests as $name => $request) {
+            if (!is_string($name) || $name === '') {
+                throw new \InvalidArgumentException('Poll requests must use a non-empty string key as the request name.');
+            }
+            if (!$request instanceof BuiltRequest) {
+                throw new \InvalidArgumentException("Poll request '{$name}' must be an instance of BuiltRequest.");
+            }
+        }
+
+        $timeout = (int) config('integrations.base.http.timeout', 15);
+        $retries = (int) config('integrations.base.http.retry.times', 0);
+        $retrySleepMs = (int) config('integrations.base.http.retry.sleep_ms', 200);
+
+        $responses = Http::pool(function (Pool $pool) use ($requests, $timeout, $retries, $retrySleepMs) {
+            $out = [];
+            foreach ($requests as $name => $request) {
+                $pending = $pool->withHeaders($request->headers)
+                    ->acceptJson()
+                    ->timeout($timeout);
+
+                if ($retries > 0) {
+                    $pending = $pending->retry(
+                        $retries,
+                        $retrySleepMs,
+                        function (\Throwable $exception, ?Response $response) {
+                            if ($exception) {
+                                return true;
+                            }
+                            if (!$response) {
+                                return true;
+                            }
+                            $status = $response->status();
+                            return $status === 429 || ($status >= 500 && $status <= 599);
+                        },
+                        throw: false
+                    );
+                }
+
+                $options = [];
+                if (!empty($request->query)) {
+                    $options['query'] = $request->query;
+                }
+                if (!empty($request->body)) {
+                    $options['json'] = $request->body;
+                }
+                $method = strtoupper(is_string($request->method) ? $request->method : $request->method->value);
+
+                $out[$name] = $pending->send($method, $request->url, $options);
+            }
+            return $out;
+        });
+
+        $out = [];
+        foreach ($responses as $name => $response) {
+            $out[$name] = new HttpResponse(
+                $response->status(),
+                $response->headers(),
+                $response->json(),
+                $response->body(),
+                $response->successful()
+            );
+        }
+
+        return $out;
     }
 
     private function buildPendingRequest(BuiltRequest $request): PendingRequest

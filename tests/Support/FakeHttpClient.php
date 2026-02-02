@@ -16,4 +16,13 @@ class FakeHttpClient implements HttpClient
     {
         return $this->response;
     }
+
+    public function pool(array $requests): array
+    {
+        $out = [];
+        foreach ($requests as $name => $_request) {
+            $out[$name] = $this->response;
+        }
+        return $out;
+    }
 }
